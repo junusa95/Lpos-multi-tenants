@@ -50,7 +50,7 @@ class TransferController extends Controller
 
                         $productRaw = Product::where('id', $product)->where('company_id', Auth::user()->company_id)->first();
 
-                        $query = DB::table('shop_products')->where('shop_id',$request['from_id'] )->where('product_id', $product)->where('active', 'yes')->first();
+                        $query = DB::connection('tenant')->table('shop_products')->where('shop_id',$request['from_id'] )->where('product_id', $product)->where('active', 'yes')->first();
                         if (!empty($query)){
                             if ($request['quantities'][$key] > $query->quantity) {
                                 return response()->json([
@@ -77,11 +77,11 @@ class TransferController extends Controller
 
 
                                 if ($request['from'] == 'store') {
-                                    $q = DB::table('store_products')->where('store_id',$request['from_id'])->where('product_id',$product)->where('active','yes');
+                                    $q = DB::connection('tenant')->table('store_products')->where('store_id',$request['from_id'])->where('product_id',$product)->where('active','yes');
                                     $ssid = $transfer->fstore->id;
                                 }
                                 if ($request['from'] == 'shop') {
-                                    $q = DB::table('shop_products')->where('shop_id',$request['from_id'])->where('product_id',$product)->where('active','yes');
+                                    $q = DB::connection('tenant')->table('shop_products')->where('shop_id',$request['from_id'])->where('product_id',$product)->where('active','yes');
                                     $ssid = $transfer->fshop->id;
                                 }
 
@@ -128,7 +128,7 @@ class TransferController extends Controller
     }
 
     public function getShippers(){
-        $shipper = DB::table('users')
+        $shipper = DB::connection('tenant')->table('users')
             ->where('company_id', Auth::user()->company_id)
             ->where('status', 'active')
             ->select('id', 'name')

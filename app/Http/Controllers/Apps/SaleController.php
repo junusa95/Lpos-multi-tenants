@@ -50,7 +50,7 @@ class SaleController extends Controller
                     ->where('company_id', Auth::user()->company_id)
                     ->first();
 
-                $productRaw = DB::table('shop_products')
+                $productRaw = DB::connection('tenant')->table('shop_products')
                     ->where('shop_id', $shop_id)
                     ->where('product_id', $product_id)
                     ->where('active', 'yes')
@@ -115,7 +115,7 @@ class SaleController extends Controller
                 $totalAmount += $sale->sub_total;
                 $totalQuantity += $sale->quantity;
 
-                $q = DB::table('shop_products')->where('product_id',$product_id)->where('shop_id', $shop_id)->where('active', 'yes');
+                $q = DB::connection('tenant')->table('shop_products')->where('product_id',$product_id)->where('shop_id', $shop_id)->where('active', 'yes');
                 if ($q->first()) {
                     $quantity = ($q->first()->quantity - $sale->quantity);
                     $q->update(['quantity'=>$quantity]);
@@ -227,7 +227,7 @@ class SaleController extends Controller
             ->get();
 
         $customer_ids = $sales->pluck('customer_id')->unique()->filter();
-        $customers_deposit = DB::table('customer_debts')
+        $customers_deposit = DB::connection('tenant')->table('customer_debts')
             // ->whereIn('customer_id', [176])
             // ->whereIn('customer_id', $customer_ids)
             ->where('shop_id',$shop_id)
@@ -239,11 +239,11 @@ class SaleController extends Controller
 
             // $customers_deposit = CustomerDebt::where('customer_id', 174)->whereBetween(DB::raw('DATE(updated_at)'), [$startDate, $endDate])->orderBy('updated_at', 'desc')->get();
 
-            
+
 
             // return $sales;
 
-        $customers_debt = DB::table('customer_debts')
+        $customers_debt = DB::connection('tenant')->table('customer_debts')
             ->whereIn('customer_id', $customer_ids)
             ->where('shop_id',$shop_id)
             ->where('status','<>','weka pesa')
@@ -253,7 +253,7 @@ class SaleController extends Controller
             ->whereBetween(DB::raw('DATE(updated_at)'), [$startDate, $endDate])
             ->sum('debt_amount');
 
-        $negative_buy_stock = DB::table('customer_debts')
+        $negative_buy_stock = DB::connection('tenant')->table('customer_debts')
             ->whereIn('customer_id', $customer_ids)
             ->where('shop_id',$shop_id)
             ->where('status','buy stock')
@@ -264,7 +264,7 @@ class SaleController extends Controller
             ->select(DB::raw('ABS(SUM(debt_amount)) as total'))
             ->value('total');
 
-        $positive_buy_stock = DB::table('customer_debts')
+        $positive_buy_stock = DB::connection('tenant')->table('customer_debts')
             ->whereIn('customer_id', $customer_ids)
             ->where('shop_id',$shop_id)
             ->where('status','buy stock')
@@ -297,7 +297,7 @@ class SaleController extends Controller
         ]);
     }
     public function sales_update(Request $request){
-          $data = array();
+        $data = array();
         $id = $request->input('id');
         $qty = $request->input('quantity');
         $price = $request->input('amount');
@@ -307,13 +307,13 @@ class SaleController extends Controller
                 return response()->json(['success'=>'Nothing edited']);
             } else {
                 $solddate = date("d-m-Y", strtotime($row->updated_at));
-                $q = DB::table('shop_products')->where('shop_id',$row->shop_id)->where('product_id',$row->product_id)->where('active','yes');
+                $q = DB::connection('tenant')->table('shop_products')->where('shop_id',$row->shop_id)->where('product_id',$row->product_id)->where('active','yes');
                 if ($q->first()) {
                     $edited_at = date('Y-m-d H:i:s');
                     $total_buying = ($qty * $row->buying_price);
                     $subtotal = $qty*$price;
                     $diffQ = $row->quantity - $qty;
-                    $update = DB::table('sales')->where('id',$id)->where('company_id',Auth::user()->company_id)->update(['status'=>'edited']);
+                    $update = DB::connection('tenant')->table('sales')->where('id',$id)->where('company_id',Auth::user()->company_id)->update(['status'=>'edited']);
                     if ($update) {
                         $data = $row->replicate();
                         $data = $data->toArray();
@@ -337,7 +337,7 @@ class SaleController extends Controller
                 }
 
                 // return response()->json(['success'=>'edited','data'=>$data]);
-                
+
                 return response()->json([
                     'status' => 1,
                     'message'=> 'success',
@@ -470,7 +470,7 @@ class SaleController extends Controller
             if ($row) {
                 $edited_at = date('Y-m-d H:i:s');
                 $solddate = date("d-m-Y", strtotime($row->updated_at));
-                $q = DB::table('shop_products')->where('shop_id',$row->shop_id)->where('product_id',$row->product_id)->where('active','yes');
+                $q = DB::connection('tenant')->table('shop_products')->where('shop_id',$row->shop_id)->where('product_id',$row->product_id)->where('active','yes');
                 if ($q->first()) {
                     $update = $row->update(['status'=>'deleted','edited_at'=>$edited_at,'edited_by'=>Auth::user()->id]);
                     if ($update) {
@@ -561,7 +561,7 @@ class SaleController extends Controller
             ])
             ->where('company_id', Auth::user()->company_id)
             ->where('shop_id', $shop_id)
-            ->whereDate('created_at', 
+            ->whereDate('created_at',
                 Carbon::parse($date)
             )
             ->groupBy(DB::raw("DATE(created_at)"))
@@ -597,7 +597,7 @@ class SaleController extends Controller
         $totalEX = ShopExpense::where('company_id',Auth::user()->company_id)
         ->where('shop_id',$shop_id)
         // ->whereBetween('created_at', [Carbon::parse($startDate),Carbon::parse($endDate)])
-            ->whereDate('created_at', 
+            ->whereDate('created_at',
                 Carbon::parse($date)
             )
         ->sum('amount');
@@ -662,7 +662,7 @@ class SaleController extends Controller
             ->groupBy('customers.id', 'customers.name', 'customer_debts.status')
             ->orderBy('customers.id')
             ->get();
-        
+
         // $grouped = $debts->groupBy('customer_id')->map(function ($rows) use ($allStatuses) {
         //     $customer = $rows->first();
         //     $statusMap = $rows->pluck('total_amount', 'status');
@@ -722,7 +722,7 @@ class SaleController extends Controller
             ->groupBy(DB::raw("DATE(created_at)"))
             ->get();
 
-           
+
 
         $data['sales'] = $grouped;
         $data['total_expenses'] = $expenses->sum('total_expense_amount');
@@ -763,7 +763,7 @@ class SaleController extends Controller
         });
 
         $customer_ids = $sales->pluck('customer_id')->unique()->filter();
-        $customers_deposit = DB::table('customer_debts')
+        $customers_deposit = DB::connection('tenant')->table('customer_debts')
             ->whereIn('customer_id', $customer_ids)
             ->where('shop_id',$shop_id)
             ->where('status','weka pesa')
@@ -771,7 +771,7 @@ class SaleController extends Controller
             ->whereBetween(DB::raw('DATE(updated_at)'), [$date, $date])
             ->sum('amount_paid');
 
-        $customers_debt = DB::table('customer_debts')
+        $customers_debt = DB::connection('tenant')->table('customer_debts')
             ->whereIn('customer_id', $customer_ids)
             ->where('shop_id',$shop_id)
             ->where('status','<>','weka pesa')
@@ -839,7 +839,7 @@ class SaleController extends Controller
         });
 
         $customer_ids = $sales->pluck('customer_id')->unique()->filter();
-        $customers_deposit = DB::table('customer_debts')
+        $customers_deposit = DB::connection('tenant')->table('customer_debts')
             ->whereIn('customer_id', $customer_ids)
             ->where('shop_id',$shop_id)
             ->where('status','weka pesa')
@@ -847,7 +847,7 @@ class SaleController extends Controller
             ->whereBetween(DB::raw('DATE(updated_at)'), [$date, $date])
             ->sum('amount_paid');
 
-        $customers_debt = DB::table('customer_debts')
+        $customers_debt = DB::connection('tenant')->table('customer_debts')
             ->whereIn('id', $customer_ids)
             ->where('shop_id',$shop_id)
             ->where('status','<>','weka pesa')
@@ -901,7 +901,7 @@ class SaleController extends Controller
         // });
 
         $customer_ids = $sales->pluck('customer_id')->unique()->filter();
-        $customers_deposit = DB::table('customer_debts')
+        $customers_deposit = DB::connection('tenant')->table('customer_debts')
             ->whereIn('customer_id', $customer_ids)
             ->where('shop_id',$shop_id)
             ->where('status','weka pesa')
@@ -909,7 +909,7 @@ class SaleController extends Controller
             ->whereBetween(DB::raw('DATE(updated_at)'), [$date, $date])
             ->sum('amount_paid');
 
-        $customers_debt = DB::table('customer_debts')
+        $customers_debt = DB::connection('tenant')->table('customer_debts')
             ->whereIn('id', $customer_ids)
             ->where('shop_id',$shop_id)
             ->where('status','<>','weka pesa')
@@ -1042,5 +1042,5 @@ class SaleController extends Controller
         ]);
     }
 
-    
+
 }

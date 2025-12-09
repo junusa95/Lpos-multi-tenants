@@ -284,7 +284,7 @@ class SupplierController extends Controller
                     'added_at'=>date('Y-m-d H:i:s')
                 ]);
 
-                $existQuantity = DB::table('shop_products')->where('shop_id',$shop_id)->where('product_id',$product->id)->where('active','yes');
+                $existQuantity = DB::connection('tenant')->table('shop_products')->where('shop_id',$shop_id)->where('product_id',$product->id)->where('active','yes');
                 if($existQuantity->first()) {
                     $av_q = $existQuantity->first()->quantity;
                 } else {
@@ -313,7 +313,7 @@ class SupplierController extends Controller
                     if ($existQuantity->first()) {
                         $existQuantity->update(['quantity'=>$new_q]);
                     } else {
-                        $add = DB::table('shop_products')->insert(['shop_id' => $shop_id, 'product_id'=>$add->product_id, 'quantity'=>$add->quantity, 'active'=>'yes', 'created_at' =>  \Carbon\Carbon::now(), 'updated_at' =>  \Carbon\Carbon::now()]);
+                        $add = DB::connection('tenant')->table('shop_products')->insert(['shop_id' => $shop_id, 'product_id'=>$add->product_id, 'quantity'=>$add->quantity, 'active'=>'yes', 'created_at' =>  \Carbon\Carbon::now(), 'updated_at' =>  \Carbon\Carbon::now()]);
                     }
 
                     if($min_stock == "yes") {
@@ -455,7 +455,7 @@ class SupplierController extends Controller
 
                         $item->update(['quantity'=>$newqty,'total_buying'=>$tb,'user_id'=>Auth::user()->id]);
 
-                        $row = DB::table('shop_products')->where('shop_id',$item->shop_id)->where('product_id',$item->product_id)->where('active','yes');
+                        $row = DB::connection('tenant')->table('shop_products')->where('shop_id',$item->shop_id)->where('product_id',$item->product_id)->where('active','yes');
 
                         if ($row->first()) {
                             $new_q = $row->first()->quantity + $diff;
@@ -507,7 +507,7 @@ class SupplierController extends Controller
             $stock->update(['status'=>'deleted']);
             $quantity = $stock->quantity;
 
-            $row = DB::table('shop_products')->where('shop_id',$stock->shop_id)->where('product_id',$stock->product_id)->where('active','yes');
+            $row = DB::connection('tenant')->table('shop_products')->where('shop_id',$stock->shop_id)->where('product_id',$stock->product_id)->where('active','yes');
             if ($row->first()) {
                 $new_q = $row->first()->quantity - $quantity;
                 $insert = StockAdjustment::create(['from'=>'shop','from_id'=>$row->first()->shop_id,'product_id'=>$row->first()->product_id,'av_quantity'=>$row->first()->quantity,'company_id'=>Auth::user()->company_id, 'new_quantity'=>$new_q,'status'=>'stock adjustment','user_id'=>Auth::user()->id]);

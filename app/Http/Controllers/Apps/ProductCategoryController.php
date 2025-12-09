@@ -7,6 +7,7 @@ use App\ProductCategory;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class ProductCategoryController extends Controller
 {
@@ -24,6 +25,14 @@ class ProductCategoryController extends Controller
     }
 
     public function create(Request $request){
+         $validator = Validator::make($request->all(), [
+            'name' => 'required|max:25',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(),400);
+        }
+
        $user = Auth::user();
 
         if ($user) {
@@ -47,6 +56,15 @@ class ProductCategoryController extends Controller
     }
 
     public function update(Request $request){
+         $validator = Validator::make($request->all(), [
+            'name' => 'required|max:25',
+            'id' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(),400);
+        }
+
        $user = Auth::user();
 
         if ($user) {

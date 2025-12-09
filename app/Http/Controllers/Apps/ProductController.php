@@ -164,7 +164,7 @@ class ProductController extends Controller
             ]);
 
             if($insert) {
-                $pro = DB::table('shop_products')->where('shop_id',$shop->id)->where('product_id',$product->id)->where('active','yes');
+                $pro = DB::connection('tenant')->table('shop_products')->where('shop_id',$shop->id)->where('product_id',$product->id)->where('active','yes');
                 if ($pro->first()) {
                     $av_qty = $pro->first()->quantity;
                     $new_qty = $av_qty + $request->quantity;
@@ -173,7 +173,7 @@ class ProductController extends Controller
                         $pro->update(['quantity'=>$new_qty]);
                     }
                 } else {
-                    $add = DB::table('shop_products')->insert(['shop_id' => $shop->id, 'product_id'=>$product->id, 'quantity'=>$request->quantity, 'active'=>'yes', 'created_at' =>  \Carbon\Carbon::now(), 'updated_at' =>  \Carbon\Carbon::now()]);
+                    $add = DB::connection('tenant')->table('shop_products')->insert(['shop_id' => $shop->id, 'product_id'=>$product->id, 'quantity'=>$request->quantity, 'active'=>'yes', 'created_at' =>  \Carbon\Carbon::now(), 'updated_at' =>  \Carbon\Carbon::now()]);
                     if ($add) {
                         $insert->update(['available_quantity'=>0,'new_quantity'=>$request->quantity,'received_by'=>$user->id,'received_at'=>date('Y-m-d H:i:s')]);
                     }
@@ -287,7 +287,7 @@ class ProductController extends Controller
             $product->retail_price = $request->retail_price;
             $product->measurement_id = $request->measurement_id;
             $product->product_category_id = $request->product_category_id;
-            $product->status = 'published'; //get from request 
+            $product->status = 'published'; //get from request
             $product->user_id = $user->id;
             $product->expire_date = $expire_date;
             $product->min_stock_level = $request->min_stock_level;
@@ -358,9 +358,9 @@ class ProductController extends Controller
         if ($row) {
             $delete = $row->update(['status'=>'deleted','user_id'=>$user->id]);
             if ($delete) {
-                $rows = DB::table("shop_products")->where("product_id",$row->id)->where('active','yes')->update(['active'=>'no']);
+                $rows = DB::connection('tenant')->table("shop_products")->where("product_id",$row->id)->where('active','yes')->update(['active'=>'no']);
 
-                $rows2 = DB::table("store_products")->where("product_id",$row->id)->where('active','yes')->update(['active'=>'no']);
+                $rows2 = DB::connection('tenant')->table("store_products")->where("product_id",$row->id)->where('active','yes')->update(['active'=>'no']);
 
                 NewStock::where('product_id',$row->id)->where('company_id',$user->company_id)->where('status','sent')->update(['status'=>'deleted']);
 
@@ -425,7 +425,7 @@ class ProductController extends Controller
         $user = Auth::user();
 
         // Single query to get products by category that are available in the shop
-        $products = DB::table('products as p')
+        $products = DB::connection('tenant')->table('products as p')
             ->join('shop_products as sp', 'p.id', '=', 'sp.product_id')
             ->where('p.product_category_id', $categoryId)
             ->where('p.status', 'published')
@@ -476,7 +476,7 @@ class ProductController extends Controller
             return response()->json($validator->errors(),400);
         }
 
-        $q = DB::table('shop_products')->where('product_id',$request->input('productId'))->where('shop_id', $request->input('shopId'))->where('active', 'yes');
+        $q = DB::connection('tenant')->table('shop_products')->where('product_id',$request->input('productId'))->where('shop_id', $request->input('shopId'))->where('active', 'yes');
         if ($q->first()) {
                     $quantity = ($q->first()->quantity + $request->input('quantity'));
                     $q->update(['quantity'=>$quantity]);
@@ -511,8 +511,8 @@ class ProductController extends Controller
         if($product){
             $restore = $product->update(['status'=>'published','user_id'=>Auth::user()->id]);
             if($restore){
-               DB::table("shop_products")->where("product_id",$product_id)->update(['active'=>'yes']);
-               DB::table("store_products")->where("product_id",$product_id)->update(['active'=>'yes']);
+               DB::connection('tenant')->table("shop_products")->where("product_id",$product_id)->update(['active'=>'yes']);
+               DB::connection('tenant')->table("store_products")->where("product_id",$product_id)->update(['active'=>'yes']);
                NewStock::where('product_id',$product_id)->where('company_id',Auth::user()->company_id)->update(['status'=>'sent']);
             //    \App\Sale::where('company_id',Auth::user()->company_id)->where('product_id',$product_id)->update(['status'=>'t']);
             }
@@ -708,7 +708,7 @@ class ProductController extends Controller
     $company_id = Auth::user()->company_id;
 
     // base available stock
-    $availableQ = DB::table('shop_products')
+    $availableQ = DB::connection('tenant')->table('shop_products')
         ->where('shop_id',$shop_id)
         ->where('product_id',$product_id)
         ->where('active','yes')

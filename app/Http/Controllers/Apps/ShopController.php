@@ -169,7 +169,7 @@ class ShopController extends Controller
                     ]);
 
                     if ($shop) {
-                        DB::table('user_shops')->insert(['user_id'=>$user->id,'shop_id'=>$shop->id,'who'=>'cashier']);
+                        DB::connection('tenant')->table('user_shops')->insert(['user_id'=>$user->id,'shop_id'=>$shop->id,'who'=>'cashier']);
                     }
 
                     // default unit of measurement
@@ -481,13 +481,13 @@ class ShopController extends Controller
                             'who'=>'cashier'
                         ]);
 
-                        $check = DB::table('user_roles')
+                        $check = DB::connection('tenant')->table('user_roles')
                                         ->where('user_id',$request->cashier)
                                         ->where('role_id',6)
                                         ->get();
 
                         if ($check->isEmpty()) {
-                            DB::table('user_roles')->insert(['user_id' => $request->cashier, 'role_id'=>6]);
+                            DB::connection('tenant')->table('user_roles')->insert(['user_id' => $request->cashier, 'role_id'=>6]);
                         }
                     }
 
@@ -562,26 +562,26 @@ class ShopController extends Controller
             $shop = Shop::where('id',$shop_id)->where('company_id',Auth::user()->company_id)->first();
             Delete::create(['type'=>'shop','name'=>$shop->name,'who_deleted'=>Auth::user()->id]);
             // user_shops
-            $cashiers = DB::table('user_shops')->where('shop_id',$shop->id)->where('who','cashier')->get();
+            $cashiers = DB::connection('tenant')->table('user_shops')->where('shop_id',$shop->id)->where('who','cashier')->get();
             if ($cashiers->isNotEmpty()) {
                 foreach($cashiers as $cashier) { // delete/untouch cashiers
-                    $delete = DB::table('user_shops')->where('user_id',$cashier->user_id)->where('shop_id',$shop->id)->where('who','cashier')->delete();
+                    $delete = DB::connection('tenant')->table('user_shops')->where('user_id',$cashier->user_id)->where('shop_id',$shop->id)->where('who','cashier')->delete();
                     if ($delete) {
-                        $check = DB::table('user_shops')->where('user_id',$cashier->user_id)->where('who','cashier')->get();
+                        $check = DB::connection('tenant')->table('user_shops')->where('user_id',$cashier->user_id)->where('who','cashier')->get();
                         if ($check->isEmpty()) {
-                            DB::table('user_roles')->where('user_id',$cashier->user_id)->where('role_id',6)->delete();
+                            DB::connection('tenant')->table('user_roles')->where('user_id',$cashier->user_id)->where('role_id',6)->delete();
                         }
                     }
                 }
             }
-            $salepersons = DB::table('user_shops')->where('shop_id',$shop->id)->where('who','sale person')->get();
+            $salepersons = DB::connection('tenant')->table('user_shops')->where('shop_id',$shop->id)->where('who','sale person')->get();
             if ($salepersons->isNotEmpty()) {
                 foreach($salepersons as $saleperson) { // delete/untouch saleperson
-                    $delete = DB::table('user_shops')->where('user_id',$saleperson->user_id)->where('shop_id',$shop->id)->where('who','sale person')->delete();
+                    $delete = DB::connection('tenant')->table('user_shops')->where('user_id',$saleperson->user_id)->where('shop_id',$shop->id)->where('who','sale person')->delete();
                     if ($delete) {
-                        $check = DB::table('user_shops')->where('user_id',$saleperson->user_id)->where('who','sale person')->get();
+                        $check = DB::connection('tenant')->table('user_shops')->where('user_id',$saleperson->user_id)->where('who','sale person')->get();
                         if ($check->isEmpty()) {
-                            DB::table('user_roles')->where('user_id',$saleperson->user_id)->where('role_id',7)->delete();
+                            DB::connection('tenant')->table('user_roles')->where('user_id',$saleperson->user_id)->where('role_id',7)->delete();
                         }
                     }
                 }
@@ -595,7 +595,7 @@ class ShopController extends Controller
             // stock taking
             StockAdjustment::where('from','shop')->where('from_id',$shop->id)->where('company_id',Auth::user()->company_id)->where('status','stock taking')->delete();
             // shop products
-            DB::table('shop_products')->where('shop_id',$shop->id)->delete();
+            DB::connection('tenant')->table('shop_products')->where('shop_id',$shop->id)->delete();
             // shop expenses
             ShopExpense::where('shop_id',$shop->id)->where('company_id',Auth::user()->company_id)->delete();
             // return sold items
@@ -661,7 +661,7 @@ class ShopController extends Controller
         $startDate = Carbon::now()->subDays(5)->startOfDay();
         $endDate = Carbon::yesterday()->startOfDay();
 
-        $sales = DB::table('daily_sales')
+        $sales = DB::connection('tenant')->table('daily_sales')
             ->select('date', DB::raw('SUM(total_sales) as total'))
             ->where('shop_id', $shop_id)
             ->whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
@@ -682,7 +682,7 @@ class ShopController extends Controller
 
         $data['shop_products'] = $shop?->products_on_shop_count ?? 0;
 
-        $data['total_sales'] = DB::table('sales')
+        $data['total_sales'] = DB::connection('tenant')->table('sales')
                 ->where('shop_id', $shop_id)
                 ->where('status', 'sold')
                 ->whereMonth('updated_at', now()->month)

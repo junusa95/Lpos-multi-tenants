@@ -79,7 +79,7 @@ class UserController extends Controller
                     if ($request->input('roles')){
 
                         foreach($request->input('roles') as $role){
-                            DB::table('user_roles')->insert(['user_id' => $user->id, 'role_id'=>$role]);
+                            DB::connection('tenant')->table('user_roles')->insert(['user_id' => $user->id, 'role_id'=>$role]);
                         }
 
                     }
@@ -124,10 +124,10 @@ class UserController extends Controller
 
         $roles = $request->input('roles', []);
 
-        DB::table('user_roles')->where('user_id', $request->user_id)->delete();
+        DB::connection('tenant')->table('user_roles')->where('user_id', $request->user_id)->delete();
 
         foreach ($roles as $role) {
-            DB::table('user_roles')->insert([
+            DB::connection('tenant')->table('user_roles')->insert([
                 'user_id' => $request->user_id,
                 'role_id' => $role,
             ]);
@@ -187,7 +187,7 @@ class UserController extends Controller
 
             $data['shops'] = Shop::where('company_id',Auth::user()->company_id)->get();
             $data['user'] = User::with('roles')->where('id',$user_id)->where('status','!=','deleted')->where('company_id',Auth::user()->company_id)->first();
-            $shopsIds = DB::table('user_shops')->where('user_id',$user_id)->where('who','cashier')->pluck('shop_id')->toArray();
+            $shopsIds = DB::connection('tenant')->table('user_shops')->where('user_id',$user_id)->where('who','cashier')->pluck('shop_id')->toArray();
             $data['assigned_shop'] = Shop::whereIn('id',$shopsIds)->get();
 
             return response()->json([
@@ -220,13 +220,13 @@ class UserController extends Controller
 
             if ($role->name == 'Cashier') {
                 foreach ($request->input('shop_ids') as $key => $value) {
-                    DB::table('user_shops')->insert(['user_id' => $request->input('user_id'), 'shop_id'=>$value, 'who'=>'cashier']);
+                    DB::connection('tenant')->table('user_shops')->insert(['user_id' => $request->input('user_id'), 'shop_id'=>$value, 'who'=>'cashier']);
                 }
             }
 
             if ($role->name == 'Sales Person') {
                 foreach ($request->input('shop_ids') as $key => $value) {
-                    DB::table('user_shops')->insert(['user_id' => $request->input('user_id'), 'shop_id'=>$value, 'who'=>'sale person']);
+                    DB::connection('tenant')->table('user_shops')->insert(['user_id' => $request->input('user_id'), 'shop_id'=>$value, 'who'=>'sale person']);
                 }
             }
 
@@ -264,26 +264,26 @@ class UserController extends Controller
 
                 // delete first
 
-                $cashier = DB::table('user_shops')->where('user_id',$request->input('user_id'))->where('who','cashier')->get();
+                $cashier = DB::connection('tenant')->table('user_shops')->where('user_id',$request->input('user_id'))->where('who','cashier')->get();
                 foreach($cashier as $cash){
                     $cash->delete();
                 }
 
                 foreach ($request->input('shop_ids') as $key => $value) {
-                    DB::table('user_shops')->insert(['user_id' => $request->input('user_id'), 'shop_id'=>$value, 'who'=>'cashier']);
+                    DB::connection('tenant')->table('user_shops')->insert(['user_id' => $request->input('user_id'), 'shop_id'=>$value, 'who'=>'cashier']);
                 }
             }
 
             if ($role->name == 'Sales Person') {
 
 
-                $sales = DB::table('user_shops')->where('user_id',$request->input('user_id'))->where('who','sale person')->get();
+                $sales = DB::connection('tenant')->table('user_shops')->where('user_id',$request->input('user_id'))->where('who','sale person')->get();
                 foreach($sales as $sale){
                     $sale->delete();
                 }
 
                 foreach ($request->input('shop_ids') as $key => $value) {
-                    DB::table('user_shops')->insert(['user_id' => $request->input('user_id'), 'shop_id'=>$value, 'who'=>'sale person']);
+                    DB::connection('tenant')->table('user_shops')->insert(['user_id' => $request->input('user_id'), 'shop_id'=>$value, 'who'=>'sale person']);
                 }
             }
 
