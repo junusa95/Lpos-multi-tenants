@@ -40,7 +40,7 @@ Route::get('/get/getAllRegions', 'Apps\ShopController@getAllRegions');
 Route::get('/get/getAllDistricts', 'Apps\ShopController@getAllDistricts');
 Route::get('/get/getAllWards', 'Apps\ShopController@getAllWards');
 
-Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
+Route::middleware(['auth:sanctum','ApiTenant'])->group(function () {
 
     Route::get("user/profile","Apps\AuthenticationController@profile");
 
