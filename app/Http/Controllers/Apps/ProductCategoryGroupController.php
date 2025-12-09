@@ -80,12 +80,13 @@ class ProductCategoryGroupController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|max:25',
+            'id'=>'required'
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(),400);
         }
-        
+
         $group = ProductCategoryGroup::where('id',$request->group_id)->update([
             'name',$request->name
         ]);
