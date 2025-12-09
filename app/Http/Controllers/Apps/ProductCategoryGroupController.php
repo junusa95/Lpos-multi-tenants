@@ -7,6 +7,7 @@ use App\ProductCategoryGroup;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class ProductCategoryGroupController extends Controller
 {
@@ -47,6 +48,14 @@ class ProductCategoryGroupController extends Controller
 
     public function create(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|max:25',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(),400);
+        }
+
         $user = Auth::user();
 
         $group = ProductCategoryGroup::create([
@@ -69,6 +78,14 @@ class ProductCategoryGroupController extends Controller
 
     public function update(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|max:25',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(),400);
+        }
+        
         $group = ProductCategoryGroup::where('id',$request->group_id)->update([
             'name',$request->name
         ]);
